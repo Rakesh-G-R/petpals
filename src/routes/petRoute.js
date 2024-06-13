@@ -1,5 +1,18 @@
 import { Router } from "express";
 import { petModel } from "../models/petsSchema.js";
+import multer from 'multer';
+
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, 'uploads/');
+    },
+    filename: (req, file, cb) => {
+      cb(null, Date.now() + '-' + file.originalname);
+    }
+  });
+  
+  const upload = multer({ storage });
 
 export const pet=Router();
 
@@ -33,15 +46,19 @@ pet.get('/pets/:id', async (req, res) => {
   });
   
   
-  pet.post('/pets/add', async (req, res) => {
-    const newPet = req.body;
-    try {
-      const pet = await petModel.create(newPet);
-      res.status(201).json(pet);
-    } catch (error) {
-      res.status(400).json({ message: error.message });
-    }
-  });
+ 
+pet.post('/pets/add', upload.single('photo'), async (req, res) => {
+  const newPet = req.body;
+  if (req.file) {
+    newPet.photos = [req.file.filename];
+  }
+  try {
+    const pet = await petModel.create(newPet);
+    res.status(201).json(pet);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
   
   pet.put('/pets/update/:id', async (req, res) => {
     const { id } = req.params;
