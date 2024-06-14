@@ -1,6 +1,8 @@
 import { Router } from "express";
 import { petModel } from "../models/petsSchema.js";
 import multer from 'multer';
+import express from 'express';
+import path from 'path'
 
 
 const storage = multer.diskStorage({
@@ -12,9 +14,16 @@ const storage = multer.diskStorage({
     }
   });
   
+
+
   const upload = multer({ storage });
 
 export const pet=Router();
+
+// pet.use(express.static(process.cwd(),'/upload'))
+
+pet.use('/uploads', express.static('uploads'));
+
 
 pet.get('/pets/:id', async (req, res) => {
     const { id } = req.params;
@@ -50,7 +59,9 @@ pet.get('/pets/:id', async (req, res) => {
 pet.post('/pets/add', upload.single('photo'), async (req, res) => {
   const newPet = req.body;
   if (req.file) {
-    newPet.photos = [req.file.filename];
+    const filePath = path.posix.join('uploads', req.file.filename);
+    newPet.photos = [filePath.replace(/\\/g, '/')];
+    console.log(newPet.photos[0]);
   }
   try {
     const pet = await petModel.create(newPet);
